@@ -1,28 +1,11 @@
-/* USER CODE BEGIN Header */
-/**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2023 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
-/* USER CODE END Header */
-/* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <string.h>
 #include <stdio.h>
+#include <stdbool.h>
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -73,7 +56,7 @@ static void MX_I2C1_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	  uint16_t raw;
+	  uint16_t potentiameterValue;
 	  char msg[10];
   /* USER CODE END 1 */
 
@@ -98,94 +81,127 @@ int main(void)
   MX_USART2_UART_Init();
   MX_ADC1_Init();
   MX_I2C1_Init();
-  /* USER CODE BEGIN 2 */
 
-  /* USER CODE END 2 */
 
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
 
   HD44780_Init(2);
   HD44780_Clear();
   HD44780_SetCursor(0,0);
-  HD44780_PrintStr("STM32 BLUE PILL");
-  HD44780_SetCursor(0,1);
-  HD44780_PrintStr("I2C LCD DEMO");
+  HD44780_PrintStr("HI");
   HAL_Delay(2000);
-
   HD44780_Clear();
-  HD44780_SetCursor(16,0);
-  HD44780_PrintStr("SCROLL LEFT");
 
-  for(int i=0; i<20; i++)
-  {
-    HD44780_ScrollDisplayLeft();
-    HAL_Delay(500);
-  }
 
-  HD44780_Clear();
-  HD44780_SetCursor(0,0);
-  HD44780_PrintStr("SCROLL RIGHT");
 
-  for(int i=0; i<20; i++)
-  {
-    HD44780_ScrollDisplayRight();
-    HAL_Delay(500);
-  }
-
-  HD44780_Clear();
-  HD44780_SetCursor(0,0);
-  HD44780_PrintStr("Lets Count 0-10!");
-  HAL_Delay(2000);
-
-  char string[5];
-  for(int counter=0;counter<= 10;counter++)
-  {
-    itoa(counter,string,10);
-    HD44780_Clear();
-    HD44780_SetCursor(0,0);
-    HD44780_PrintStr(string);
-    HAL_Delay(1000);
-  }
-  HD44780_Clear();
 
   while (1)
   	  {
 
-  	    // Test: Set GPIO pin high
-  	    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_SET);
 
-  	    // Get ADC value
-  	    HAL_ADC_Start(&hadc1);
-  	    HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-  	    raw = HAL_ADC_GetValue(&hadc1);
 
-  	    // Test: Set GPIO pin low
-  	    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET);
 
-  	    // Convert to string and print
-  	    sprintf(msg, "%hu\r\n", raw);
-  	    HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
+  	    HD44780_Clear();
 
-  	    // Pretend we have to do something else for a while
-  	    HAL_Delay(1);
 
-  	  HD44780_Clear();
-  	   HD44780_SetCursor(0,0);
-  	   HD44780_PrintStr("Lets Count 0-10!");
-  	   HAL_Delay(2000);
+  	    HD44780_SetCursor(0,0);
+  	    HD44780_PrintStr("PUSH BUTTON TO");
+  	    HD44780_SetCursor(0,1);
+  	    HD44780_PrintStr("BEGIN");
 
-    /* USER CODE END WHILE */
 
-    /* USER CODE BEGIN 3 */
+  	    // Wait for push button to be pressed
+  	    bool i=1;
+  	    while (i) {
+  	    	if (HAL_GPIO_ReadPin (GPIOA, GPIO_PIN_1) == 1) {
+  	    		i = 0;
+  	    	}
+  	    	HAL_Delay(1);
+  	    }
+
+
+
+		HD44780_Clear();
+		HAL_Delay(1000);
+
+
+
+  	    bool j=1;
+		while (j) {
+
+
+			HD44780_SetCursor(0,0);
+			HD44780_PrintStr("Enter temp:");
+
+			HAL_ADC_Start(&hadc1);
+			HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+			potentiameterValue = HAL_ADC_GetValue(&hadc1);
+
+//			sprintf(msg, "%hu\r\n", potentiameterValue);
+	//  		    HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
+
+
+	//  	  	     interpolation - temperature between 15-30
+			uint16_t t = (4095 - potentiameterValue)/potentiameterValue;
+			uint16_t targetTemp = (30+15*t)/(1+t);
+
+			char tempString[10];
+
+			sprintf(tempString, "%hu\r\n", targetTemp);
+			HAL_UART_Transmit(&huart2, (uint8_t*)tempString, strlen(tempString), HAL_MAX_DELAY);
+
+
+			HD44780_SetCursor(0, 1);
+			HD44780_PrintStr(tempString);
+			HAL_Delay(100);
+
+			if (HAL_GPIO_ReadPin (GPIOA, GPIO_PIN_1) == 1) {
+				j = 0;
+			}
+		}
+
+
+		HD44780_Clear();
+		HAL_Delay(1000);
+
+		HD44780_SetCursor(0,0);
+		HD44780_PrintStr("Waiting to cool...");
+
+		// targetTemp use to calCoolingTime
+
+
+
   	  }
 
 
 
 
 
-  /* USER CODE END 3 */
+
+
+
+
+
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /**
   * @brief System Clock Configuration
