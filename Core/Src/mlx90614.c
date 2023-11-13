@@ -112,7 +112,7 @@ uint16_t MLX90614_ReadReg(uint8_t devAddr, uint8_t regAddr, uint8_t dbg_lvl) {
 	//HAL_Delay(1);
 	return data;
 }
-float MLX90614_ReadTemp(uint8_t devAddr, uint8_t regAddr) {
+float MLX90614_ReadTemp(uint8_t devAddr, uint8_t regAddr) { // dev addr must be sensor addr
 	float temp;
 	uint16_t data;
 

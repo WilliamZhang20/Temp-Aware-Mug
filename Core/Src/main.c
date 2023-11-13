@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <string.h>
+#include <float.h>
 #include <stdio.h>
 /* USER CODE END Includes */
 
@@ -70,7 +71,7 @@ static void MX_I2C1_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  // uint8_t buf[12];
+  uint8_t buf[12];
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -94,36 +95,21 @@ int main(void)
   MX_USART2_UART_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
-  HD44780_Init(2);
-  HD44780_Clear();
-  HD44780_SetCursor(0,0);
-  HD44780_PrintStr("HI");
-  HAL_Delay(2000);
-  HD44780_Clear();
+  float c;
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  int i = 0;
   while (1)
   {
-	  HD44780_Clear();
-	  HD44780_SetCursor(0,0);
-	  char tempString[10];
-	  sprintf(tempString, "%hu", i);
-	  HD44780_PrintStr("Lets Count 1-10!");
-	  HD44780_SetCursor(0,1);
-	  HD44780_PrintStr(tempString);
-	  HAL_Delay(2000);
-	  if(i==10) {
-		  i = 0;
-	  }
-	  i++;
+	  c = MLX90614_ReadTemp(0x5A, 0x07);
+	  sprintf((char*)buf, "%e", c);
+	  HAL_UART_Transmit(&huart2, buf, strlen((char*)buf), HAL_MAX_DELAY);
+	  HAL_Delay(500);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
   }
-  HD44780_Clear();
   /* USER CODE END 3 */
 }
 
