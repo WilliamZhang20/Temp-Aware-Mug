@@ -34,34 +34,34 @@ $(wildcard ../makefile.init) \
 $(wildcard ../makefile.targets) \
 
 
-BUILD_ARTIFACT_NAME := ECE_198
+BUILD_ARTIFACT_NAME := ECE_198_3
 BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX :=
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ARTIFACT_EXTENSION),.$(BUILD_ARTIFACT_EXTENSION),)
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-ECE_198.elf \
+ECE_198_3.elf \
 
 MAP_FILES += \
-ECE_198.map \
+ECE_198_3.map \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-ECE_198.list \
+ECE_198_3.list \
 
 
 # All Target
 all: main-build
 
 # Main-build Target
-main-build: ECE_198.elf secondary-outputs
+main-build: ECE_198_3.elf secondary-outputs
 
 # Tool invocations
-ECE_198.elf ECE_198.map: $(OBJS) $(USER_OBJS) C:\Users\wzhan\STM32CubeIDE\workspace_1.13.2\ECE_198\STM32F401RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "ECE_198.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\wzhan\STM32CubeIDE\workspace_1.13.2\ECE_198\STM32F401RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ECE_198.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+ECE_198_3.elf ECE_198_3.map: $(OBJS) $(USER_OBJS) C:\Users\wzhan\STM32CubeIDE\workspace_1.13.2\ECE_198_3\STM32F401RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "ECE_198_3.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\wzhan\STM32CubeIDE\workspace_1.13.2\ECE_198_3\STM32F401RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ECE_198_3.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -70,14 +70,14 @@ default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-ECE_198.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "ECE_198.list"
+ECE_198_3.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "ECE_198_3.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) ECE_198.elf ECE_198.list ECE_198.map default.size.stdout
+	-$(RM) ECE_198_3.elf ECE_198_3.list ECE_198_3.map default.size.stdout
 	-@echo ' '
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)

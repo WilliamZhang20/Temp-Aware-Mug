@@ -12,8 +12,9 @@
 #include "stm32f4xx_hal.h"
 #include "mlx90614.h"
 
-extern I2C_HandleTypeDef hi2c3;
-char temp_buff[128] = {};
+extern I2C_HandleTypeDef hi2c1;
+extern UART_HandleTypeDef huart2;
+uint8_t temp_buff[128] = {};
 
 static const uint8_t crc_table[] = {
     0x00, 0x07, 0x0e, 0x09, 0x1c, 0x1b, 0x12, 0x15, 0x38, 0x3f, 0x36, 0x31,
@@ -69,7 +70,7 @@ void MLX90614_WriteReg(uint8_t devAddr, uint8_t regAddr, uint16_t data) {
 	i2cdata[2] = temp[3]; //Delete-Byte, high
 	i2cdata[3] = CRC8_Calc(temp, 4); //CRC8-checksum calculation: http://www.sunshine2k.de/coding/javascript/crc/crc_js.html
 
-	HAL_I2C_Master_Transmit(&hi2c3, (devAddr << 1), i2cdata, 4, 0xFFFF);
+	HAL_I2C_Master_Transmit(&hi2c1, (devAddr << 1), i2cdata, 4, 0xFFFF);
 	HAL_Delay(10);
 
 	MLX90614_SendDebugMsg(MLX90614_DBG_MSG_W, devAddr, i2cdata[0], (i2cdata[1] <<8 | i2cdata[2]), i2cdata[3], 0x00);
@@ -82,7 +83,7 @@ void MLX90614_WriteReg(uint8_t devAddr, uint8_t regAddr, uint16_t data) {
 	i2cdata[2] = temp[3]; //Delete-Byte, high
 	i2cdata[3] = CRC8_Calc(temp, 4); //CRC8-checksum calculation: http://www.sunshine2k.de/coding/javascript/crc/crc_js.html
 
-	HAL_I2C_Master_Transmit(&hi2c3, (devAddr << 1), i2cdata, 4, 0xFFFF);
+	HAL_I2C_Master_Transmit(&hi2c1, (devAddr << 1), i2cdata, 4, 0xFFFF);
 	HAL_Delay(10);
 	MLX90614_SendDebugMsg(MLX90614_DBG_MSG_W, devAddr, i2cdata[0], data, i2cdata[3], 0x00);
 }
@@ -90,7 +91,7 @@ uint16_t MLX90614_ReadReg(uint8_t devAddr, uint8_t regAddr, uint8_t dbg_lvl) {
 	uint16_t data;
 	uint8_t in_buff[3], crc_buff[5], crc;
 
-	HAL_I2C_Mem_Read(&hi2c3, (devAddr<<1), regAddr, 1, in_buff, 3, 100);
+	HAL_I2C_Mem_Read(&hi2c1, (devAddr<<1), regAddr, 1, in_buff, 3, 100);
 
 	// For a read word command, in the crc8 calculus, you have to include [SA_W, Command, SA_R, LSB, MSB]
 	crc_buff[0] = (devAddr<<1);
@@ -124,28 +125,31 @@ void MLX90614_ScanDevices (void) {
 	HAL_StatusTypeDef result;
 	for (int i = 0; i<128; i++)
 		  {
-			  result = HAL_I2C_IsDeviceReady(&hi2c3, (uint16_t) (i<<1), 2, 2);
+			  result = HAL_I2C_IsDeviceReady(&hi2c1, (uint16_t) (i<<1), 2, 2);
 			  if (result != HAL_OK)
 			  {
-				  sprintf(temp_buff, ".");
-				  CDC_Transmit_FS(temp_buff, strlen((const char *)temp_buff));
+				  sprintf((char*)temp_buff, ".");
+				  HAL_UART_Transmit(&huart2, temp_buff, strlen((const char *)temp_buff), HAL_MAX_DELAY);
+				  HAL_Delay(500);
 			  }
 			  if (result == HAL_OK)
 			  {
-				  sprintf(temp_buff, "0x%X", i);
-				  CDC_Transmit_FS(temp_buff, strlen((const char *)temp_buff));
-
+				  sprintf((char*)temp_buff, "0x%X", i);
+				  HAL_UART_Transmit(&huart2, temp_buff, strlen((const char *)temp_buff), HAL_MAX_DELAY);
+				  HAL_Delay(500);
 			  }
 		  }
 }
 void MLX90614_SendDebugMsg(uint8_t op_type, uint8_t devAddr, uint8_t regAddr, uint16_t data, uint8_t crc_in, uint8_t crc_calc) {
 	if(op_type == MLX90614_DBG_MSG_W) {
-		snprintf(temp_buff, sizeof(temp_buff), "W Dev: 0x%02X, Reg: 0x%02X, Data: 0x%04X, CRC8_calc:0x%02X\r\n", devAddr, regAddr, data, crc_calc);
-		CDC_Transmit_FS(temp_buff, strlen((const char *)temp_buff));
+		snprintf((char*)temp_buff, sizeof(temp_buff), "W Dev: 0x%02X, Reg: 0x%02X, Data: 0x%04X, CRC8_calc:0x%02X\r\n", devAddr, regAddr, data, crc_calc);
+		HAL_UART_Transmit(&huart2, temp_buff, strlen((const char *)temp_buff), HAL_MAX_DELAY);
+		HAL_Delay(500);
 	}
 	else if (op_type == MLX90614_DBG_MSG_R) {
-		snprintf(temp_buff, sizeof(temp_buff), "R Dev: 0x%02X, Reg: 0x%02X, Data: 0x%04X, CRC8_in:0x%02X, CRC8_calc:0x%02X\r\n", devAddr, regAddr, data, crc_in, crc_calc);
-		CDC_Transmit_FS(temp_buff, strlen((const char *)temp_buff));
+		snprintf((char*)temp_buff, sizeof(temp_buff), "R Dev: 0x%02X, Reg: 0x%02X, Data: 0x%04X, CRC8_in:0x%02X, CRC8_calc:0x%02X\r\n", devAddr, regAddr, data, crc_in, crc_calc);
+		HAL_UART_Transmit(&huart2, temp_buff, strlen((const char *)temp_buff), HAL_MAX_DELAY);
+		HAL_Delay(500);
 	}
 
 }
