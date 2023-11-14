@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <string.h>
+#include <stdio.h>
 #include <float.h>
 #include <stdio.h>
 /* USER CODE END Includes */
@@ -96,6 +97,7 @@ int main(void)
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
   float c;
+  uint8_t factor = 100;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -103,7 +105,8 @@ int main(void)
   while (1)
   {
 	  c = MLX90614_ReadTemp(0x5A, 0x07);
-	  sprintf((char*)buf, "%e", c);
+	  uint8_t temp = (uint8_t)(c*factor);
+	  sprintf((char*)buf, "%hu\r\n", temp / factor);
 	  HAL_UART_Transmit(&huart2, buf, strlen((char*)buf), HAL_MAX_DELAY);
 	  HAL_Delay(500);
     /* USER CODE END WHILE */

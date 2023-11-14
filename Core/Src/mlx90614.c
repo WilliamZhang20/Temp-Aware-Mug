@@ -89,27 +89,26 @@ void MLX90614_WriteReg(uint8_t devAddr, uint8_t regAddr, uint16_t data) {
 }
 uint16_t MLX90614_ReadReg(uint8_t devAddr, uint8_t regAddr, uint8_t dbg_lvl) {
 	uint16_t data;
-	uint8_t in_buff[3], crc_buff[5], crc;
+	uint8_t in_buff[3];
 
-	HAL_I2C_Mem_Read(&hi2c1, (devAddr<<1), regAddr, 1, in_buff, 3, 100);
+	HAL_I2C_Mem_Read(&hi2c1, (devAddr<<1), regAddr, 1, (uint8_t*)in_buff, 2, 100);
 
 	// For a read word command, in the crc8 calculus, you have to include [SA_W, Command, SA_R, LSB, MSB]
-	crc_buff[0] = (devAddr<<1);
+	/*crc_buff[0] = (devAddr<<1);
 	crc_buff[1] = regAddr;
 	crc_buff[2] = (devAddr<<1) + 1;
 	crc_buff[3] = in_buff[0];
 	crc_buff[4] = in_buff[1];
-	crc = CRC8_Calc(crc_buff, 5);
+	crc = CRC8_Calc(crc_buff, 5);*/
 
-	data = (in_buff[1] <<8 | in_buff[0]);
+	data = ((in_buff[1] << 8) | (in_buff[0]));
 
 	//TODO: implement CRC8 check on data received
-	if (crc != in_buff[2]) {
+	/*if (crc != in_buff[2]) {
 		data = 0x0000;
 	}
 	if(dbg_lvl == MLX90614_DBG_ON)	MLX90614_SendDebugMsg(MLX90614_DBG_MSG_R, devAddr, regAddr, data, in_buff[2], crc);
-
-	//HAL_Delay(1);
+	 */
 	return data;
 }
 float MLX90614_ReadTemp(uint8_t devAddr, uint8_t regAddr) { // dev addr must be sensor addr
@@ -118,14 +117,14 @@ float MLX90614_ReadTemp(uint8_t devAddr, uint8_t regAddr) { // dev addr must be 
 
 	data = MLX90614_ReadReg(devAddr, regAddr, MLX90614_DBG_OFF);
 	temp = data*0.02 - 273.15;
-
+	HAL_Delay(500);
 	return temp;
 }
 void MLX90614_ScanDevices (void) {
 	HAL_StatusTypeDef result;
 	for (int i = 0; i<128; i++)
 		  {
-			  result = HAL_I2C_IsDeviceReady(&hi2c1, (uint16_t) (i<<1), 2, 2);
+			  result = HAL_I2C_IsDeviceReady(&hi2c1, (uint16_t) (i<<1), 2, 2); // NOTE: actually checks the address shifted left
 			  if (result != HAL_OK)
 			  {
 				  sprintf((char*)temp_buff, ".");
