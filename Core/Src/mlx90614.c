@@ -87,11 +87,11 @@ void MLX90614_WriteReg(uint8_t devAddr, uint8_t regAddr, uint16_t data) {
 	HAL_Delay(10);
 	MLX90614_SendDebugMsg(MLX90614_DBG_MSG_W, devAddr, i2cdata[0], data, i2cdata[3], 0x00);
 }
-uint16_t MLX90614_ReadReg(uint8_t devAddr, uint8_t regAddr, uint8_t dbg_lvl) {
+int MLX90614_ReadReg(uint8_t devAddr, uint8_t regAddr, uint8_t dbg_lvl) {
 	uint16_t data;
-	uint8_t in_buff[3];
+	char in_buff[2];
 
-	HAL_I2C_Mem_Read(&hi2c1, (devAddr<<1), regAddr, 1, (uint8_t*)in_buff, 2, 100);
+	HAL_I2C_Mem_Read(&hi2c1, 0xB4, 0x07, 1, (uint8_t*)in_buff, 2, HAL_MAX_DELAY);
 
 	// For a read word command, in the crc8 calculus, you have to include [SA_W, Command, SA_R, LSB, MSB]
 	/*crc_buff[0] = (devAddr<<1);
@@ -113,7 +113,7 @@ uint16_t MLX90614_ReadReg(uint8_t devAddr, uint8_t regAddr, uint8_t dbg_lvl) {
 }
 float MLX90614_ReadTemp(uint8_t devAddr, uint8_t regAddr) { // dev addr must be sensor addr
 	float temp;
-	uint16_t data;
+	int data;
 
 	data = MLX90614_ReadReg(devAddr, regAddr, MLX90614_DBG_OFF);
 	temp = data*0.02 - 273.15;

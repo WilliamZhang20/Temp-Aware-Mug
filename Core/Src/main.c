@@ -96,17 +96,20 @@ int main(void)
   MX_USART2_UART_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
-  float c;
   uint8_t factor = 100;
+  char i2cdata[2];
+  float temperature;
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  c = MLX90614_ReadTemp(0x5A, 0x07);
-	  uint8_t temp = (uint8_t)(c*factor);
-	  sprintf((char*)buf, "%hu\r\n", temp / factor);
+	  HAL_I2C_Mem_Read(&hi2c1, 0xB4, 0x07, 1, (uint8_t*)i2cdata, 2, 100);
+	  int raw_temp = ((i2cdata[1] << 8) | (i2cdata[0]));
+	  temperature = raw_temp*0.02 - 273.15;
+	  HAL_Delay(100);
+	  sprintf((char*)buf, "%d\r\n", (int)temperature);
 	  HAL_UART_Transmit(&huart2, buf, strlen((char*)buf), HAL_MAX_DELAY);
 	  HAL_Delay(500);
     /* USER CODE END WHILE */

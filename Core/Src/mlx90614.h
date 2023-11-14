@@ -50,7 +50,7 @@
 /* Exported functions prototypes ---------------------------------------------*/
 uint8_t CRC8_Calc(uint8_t*, const uint8_t);
 void MLX90614_WriteReg(uint8_t, uint8_t, uint16_t);
-uint16_t MLX90614_ReadReg(uint8_t, uint8_t, uint8_t);
+int MLX90614_ReadReg(uint8_t, uint8_t, uint8_t);
 float MLX90614_ReadTemp(uint8_t, uint8_t);
 void MLX90614_ScanDevices (void);
 void MLX90614_SendDebugMsg(uint8_t, uint8_t, uint8_t, uint16_t, uint8_t, uint8_t);
