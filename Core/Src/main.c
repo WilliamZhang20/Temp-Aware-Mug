@@ -43,6 +43,8 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+ADC_HandleTypeDef hadc1;
+
 I2C_HandleTypeDef hi2c1;
 
 UART_HandleTypeDef huart2;
@@ -56,6 +58,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_I2C1_Init(void);
+static void MX_ADC1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -72,7 +75,6 @@ static void MX_I2C1_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  uint8_t buf[12];
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -81,6 +83,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+  uint16_t potentiometerValue;
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -94,9 +97,8 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   MX_I2C1_Init();
+  MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
-  char i2cdata[2];
-  float temperature;
   // Display vars below:
   HD44780_Init(2);
   HD44780_Clear();
@@ -110,17 +112,17 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  HAL_I2C_Mem_Read(&hi2c1, 0xB4, 0x07, 1, (uint8_t*)i2cdata, 2, 100);
-	  int raw_temp = ((i2cdata[1] << 8) | (i2cdata[0]));
-	  temperature = raw_temp*0.02 - 273.15;
-	  HAL_Delay(100);
-	  /*sprintf((char*)buf, "%d\r\n", (int)temperature);
-	  HAL_UART_Transmit(&huart2, buf, strlen((char*)buf), HAL_MAX_DELAY);
-*/
+	  HAL_ADC_Start(&hadc1);
+	  HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+	  potentiometerValue = HAL_ADC_GetValue(&hadc1);
+	  uint16_t t = (4095 - potentiometerValue)/potentiometerValue;
+	  uint16_t targetTemp = (30+15*t)/(1+t);
+
+	  // Print value to display
 	  HD44780_Clear();
 	  HD44780_SetCursor(0,0);
 	  char tempString[10];
-	  sprintf(tempString, "%d", (int)temperature);
+	  sprintf(tempString, "%hu", targetTemp);
 	  HD44780_PrintStr(tempString);
 	  HAL_Delay(1000);
 
@@ -176,6 +178,58 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief ADC1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_ADC1_Init(void)
+{
+
+  /* USER CODE BEGIN ADC1_Init 0 */
+
+  /* USER CODE END ADC1_Init 0 */
+
+  ADC_ChannelConfTypeDef sConfig = {0};
+
+  /* USER CODE BEGIN ADC1_Init 1 */
+
+  /* USER CODE END ADC1_Init 1 */
+
+  /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
+  */
+  hadc1.Instance = ADC1;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
+  hadc1.Init.Resolution = ADC_RESOLUTION_12B;
+  hadc1.Init.ScanConvMode = DISABLE;
+  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.DiscontinuousConvMode = DISABLE;
+  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc1.Init.NbrOfConversion = 1;
+  hadc1.Init.DMAContinuousRequests = DISABLE;
+  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  if (HAL_ADC_Init(&hadc1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+  sConfig.Channel = ADC_CHANNEL_0;
+  sConfig.Rank = 1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN ADC1_Init 2 */
+
+  /* USER CODE END ADC1_Init 2 */
+
 }
 
 /**
