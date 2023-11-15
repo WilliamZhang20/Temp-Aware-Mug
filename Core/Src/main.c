@@ -81,7 +81,6 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -96,9 +95,15 @@ int main(void)
   MX_USART2_UART_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
-  uint8_t factor = 100;
   char i2cdata[2];
   float temperature;
+  // Display vars below:
+  HD44780_Init(2);
+  HD44780_Clear();
+  HD44780_SetCursor(0,0);
+  HD44780_PrintStr("HI");
+  HAL_Delay(2000);
+  HD44780_Clear();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -109,13 +114,21 @@ int main(void)
 	  int raw_temp = ((i2cdata[1] << 8) | (i2cdata[0]));
 	  temperature = raw_temp*0.02 - 273.15;
 	  HAL_Delay(100);
-	  sprintf((char*)buf, "%d\r\n", (int)temperature);
+	  /*sprintf((char*)buf, "%d\r\n", (int)temperature);
 	  HAL_UART_Transmit(&huart2, buf, strlen((char*)buf), HAL_MAX_DELAY);
-	  HAL_Delay(500);
+*/
+	  HD44780_Clear();
+	  HD44780_SetCursor(0,0);
+	  char tempString[10];
+	  sprintf(tempString, "%d", (int)temperature);
+	  HD44780_PrintStr(tempString);
+	  HAL_Delay(1000);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
   }
+  HD44780_Clear();
   /* USER CODE END 3 */
 }
 
