@@ -22,9 +22,11 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <string.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <float.h>
 #include <stdio.h>
+#include <stdlib.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -66,6 +68,8 @@ static void MX_ADC1_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+enum stage { reset, set_temp, watch_temp, buzz };
+
 /* USER CODE END 0 */
 
 /**
@@ -84,6 +88,8 @@ int main(void)
 
   /* USER CODE BEGIN Init */
   uint16_t potentiometerValue;
+  uint16_t user_temp;
+  enum stage curr = reset;
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -103,8 +109,8 @@ int main(void)
   HD44780_Init(2);
   HD44780_Clear();
   HD44780_SetCursor(0,0);
-  HD44780_PrintStr("HI");
-  HAL_Delay(2000);
+  HD44780_PrintStr("Hi there!");
+  HAL_Delay(1700);
   HD44780_Clear();
   /* USER CODE END 2 */
 
@@ -112,20 +118,87 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  HAL_ADC_Start(&hadc1);
-	  HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-	  potentiometerValue = HAL_ADC_GetValue(&hadc1);
-	  uint16_t t = (4095 - potentiometerValue)/potentiometerValue;
-	  uint16_t targetTemp = (30+15*t)/(1+t);
-
-	  // Print value to display
-	  HD44780_Clear();
-	  HD44780_SetCursor(0,0);
-	  char tempString[10];
-	  sprintf(tempString, "%hu", targetTemp);
-	  HD44780_PrintStr(tempString);
-	  HAL_Delay(1000);
-
+	  if(curr==reset) {
+		  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1) == 0) {
+			  curr = set_temp;
+			  // Take temperature measurement
+			  char i2cdata[2];
+			  float temperature;
+			  HAL_I2C_Mem_Read(&hi2c1, 0xB4, 0x07, 1, (uint8_t*)i2cdata, 2, 100);
+			  int raw_temp = ((i2cdata[1] << 8) | (i2cdata[0]));
+			  temperature = raw_temp*0.02 - 273.15;
+			  HAL_Delay(10);
+			  // Print to display
+			  HD44780_Clear();
+			  HD44780_SetCursor(0,0);
+			  char tempString[10];
+			  sprintf(tempString, "%d", (int)temperature);
+			  HD44780_PrintStr("Measured temperature:");
+			  HD44780_SetCursor(0,1);
+			  HD44780_PrintStr(tempString);
+			  HAL_Delay(1000);
+		  } else {
+			  HD44780_Clear();
+			  HD44780_SetCursor(0,0);
+			  HD44780_PrintStr("Push button");
+			  HD44780_SetCursor(0, 1);
+			  HD44780_PrintStr("to start");
+			  HAL_Delay(1);
+		  }
+	  } else if(curr==set_temp) {
+		  HAL_ADC_Start(&hadc1);
+		  HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+		  potentiometerValue = HAL_ADC_GetValue(&hadc1);
+		  uint16_t t = (4095 - potentiometerValue)/potentiometerValue;
+		  uint16_t targetTemp = (30+15*t)/(1+t);
+		  // Set display params
+		  HD44780_Clear();
+		  HD44780_SetCursor(0,0);
+		  HD44780_PrintStr("Set temperature:"); // print message and temperature
+		  char tempString[10];
+		  sprintf(tempString, "%hu", targetTemp);
+		  HD44780_SetCursor(0,1);
+		  HD44780_PrintStr(tempString); // temperature out!
+		  HAL_Delay(10);
+		  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1) == 0) {
+			  user_temp = targetTemp;
+			  curr = watch_temp;
+		  }
+	  } else if(curr==watch_temp) {
+		  // TODO: take temperature measurement -> DONE
+		  char i2cdata[2];
+		  float temperature;
+		  HAL_I2C_Mem_Read(&hi2c1, 0xB4, 0x07, 1, (uint8_t*)i2cdata, 2, 100);
+		  int raw_temp = ((i2cdata[1] << 8) | (i2cdata[0]));
+		  temperature = raw_temp*0.02 - 273.15;
+		  // TODO: print to display -> DONE
+		  HD44780_Clear();
+		  HD44780_SetCursor(0,0);
+		  char tempString[10];
+		  sprintf(tempString, "%d", (int)temperature);
+		  HD44780_PrintStr("Measured temp:");
+		  HD44780_PrintStr(tempString);
+		  // TODO: compare with user temp, if close, then BUZZ
+		  HAL_Delay(1000); // allows user one second before buzz check and activate
+		  if(abs(user_temp - temperature)<=10) {
+			  curr = buzz;
+		  }
+		  HAL_Delay(9000); // between temp measurements, an overall delay of 10 seconds (subject to change)
+	  } else if(curr==buzz) {
+		  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_SET);
+		  HAL_Delay(500);
+		  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET);
+		  // Print display prompt
+		  HD44780_Clear();
+		  HD44780_SetCursor(0,0);
+		  HD44780_PrintStr("Push button");
+		  HD44780_SetCursor(0, 1);
+		  HD44780_PrintStr("to stop");
+		  HAL_Delay(1);
+		  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1) == 0) {
+			  curr = reset;
+		  }
+	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -317,7 +390,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, LD2_Pin|GPIO_PIN_11, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, LD2_Pin|GPIO_PIN_9, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : PC13 */
   GPIO_InitStruct.Pin = GPIO_PIN_13;
@@ -325,17 +398,17 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LD2_Pin PA11 */
-  GPIO_InitStruct.Pin = LD2_Pin|GPIO_PIN_11;
+  /*Configure GPIO pin : PA1 */
+  GPIO_InitStruct.Pin = GPIO_PIN_1;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : LD2_Pin PA9 */
+  GPIO_InitStruct.Pin = LD2_Pin|GPIO_PIN_9;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PA9 */
-  GPIO_InitStruct.Pin = GPIO_PIN_9;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
