@@ -89,6 +89,7 @@ int main(void)
   /* USER CODE BEGIN Init */
   uint16_t potentiometerValue;
   uint16_t user_temp;
+  uint16_t init_temp;
   enum stage curr = reset;
   /* USER CODE END Init */
 
@@ -127,6 +128,7 @@ int main(void)
 			  HAL_I2C_Mem_Read(&hi2c1, 0xB4, 0x07, 1, (uint8_t*)i2cdata, 2, 100);
 			  int raw_temp = ((i2cdata[1] << 8) | (i2cdata[0]));
 			  temperature = raw_temp*0.02 - 273.15;
+			  init_temp = temperature;
 			  HAL_Delay(10);
 			  // Print to display
 			  HD44780_Clear();
@@ -149,8 +151,8 @@ int main(void)
 		  HAL_ADC_Start(&hadc1);
 		  HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
 		  potentiometerValue = HAL_ADC_GetValue(&hadc1);
-		  uint16_t t = (4095 - potentiometerValue)/potentiometerValue;
-		  uint16_t targetTemp = (30+15*t)/(1+t);
+		  // uint16_t t = (4095 - potentiometerValue)/potentiometerValue;
+		  uint16_t targetTemp = ((potentiometerValue)*(init_temp - 20)/4095)+20;
 		  // Set display params
 		  HD44780_Clear();
 		  HD44780_SetCursor(0,0);
@@ -178,7 +180,7 @@ int main(void)
 		  sprintf(tempString, "%d", (int)temperature);
 		  HD44780_PrintStr("Measured temp:");
 		  HD44780_PrintStr(tempString);
-		  // TODO: compare with user temp, if close, then BUZZ
+		  // TODO: compare with user temp, if close, then BUZZ -> DONE
 		  HAL_Delay(1000); // allows user one second before buzz check and activate
 		  if(abs(user_temp - temperature)<=10) {
 			  curr = buzz;
@@ -200,7 +202,6 @@ int main(void)
 		  }
 	  }
     /* USER CODE END WHILE */
-
     /* USER CODE BEGIN 3 */
   }
   HD44780_Clear();
