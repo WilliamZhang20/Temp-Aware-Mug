@@ -1,0 +1,6 @@
+../Core/Src/mlx90614.c:44:9:CRC8_Calc	24	static
+../Core/Src/mlx90614.c:56:6:MLX90614_WriteReg	40	static
+../Core/Src/mlx90614.c:90:5:MLX90614_ReadReg	40	static
+../Core/Src/mlx90614.c:113:7:MLX90614_ReadTemp	24	static
+../Core/Src/mlx90614.c:122:6:MLX90614_ScanDevices	16	static
+../Core/Src/mlx90614.c:141:6:MLX90614_SendDebugMsg	40	static
