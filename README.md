@@ -1,92 +1,49 @@
-# ECE198_3_76
+# ECE198 Project - Mug Temperature Tracker
 
+This project is for the ECE 198 Project Studio course in 1A Computer Engineering at the University of Waterloo, created by Wilson Cheng and William Zhang.
 
+Its purpose is to track the temprature of a hot mug, and ring a buzzer when it has reached a preset desired temperature. 
+
+All this was done by programming an STM32F401RE with a breadboard, resistors, wires, and the peripherals mentioned below. 
 
 ## Getting started
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+To utilize this, follow the documents in the "Design Files" directory to assemble the circuits and systems.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+Then, to flash the code, plug the STM32 into an electronic source, clone this repository, open an STM CubeIDE, and press the build hammer and the run button.
 
-## Add your files
+The display should prompt you to press the button, upon whicih the thermometer will take an initial measurement. Then, you should be prompted to turn the potentiometer knob to set a temperature. Push the button again to set your desired temperature, and wait for the buzz. You will see regular temperature updates. 
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+## How does this work?
 
-```
-cd existing_repo
-git remote add origin https://git.uwaterloo.ca/w223zhan/ece198_3_76.git
-git branch -M main
-git push -uf origin main
-```
+The project will involve the control of 5 peripherals: an LCD display, an infrared thermometer, a push button, a buzzer, and a potentiometer.
 
-## Integrate with your tools
+This is accomplished with GPIO input/output control, ADC input, and the I2C communication protocol. 
 
-- [ ] [Set up project integrations](https://git.uwaterloo.ca/w223zhan/ece198_3_76/-/settings/integrations)
+*How is each peripheral controlled?*
 
-## Collaborate with your team
+1) The display: we used a library whose code is in the files called `liquidcrystal_i2c`. This allowed for easy calling of functions, after setting the I2C pins, checking the `hi2c1`, and generating code. 
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+2) The thermometer: another library was used, whose code is in [this](https://github.com/dinamitemic/mlx90614) repo. However, certain functions were uncallable with our STM32, and external variables had to be modified to `hi2c1` rather than the original `hi2c3`. Finally, while the thermometer can detect ambient temperature if used with library functions on Arduino, there were no ambient temperature functions here. Only object temperature functions, which had to be modified, and in fact, extracted to `main.c` to make temperature detection work.
 
-## Test and Deploy
+3) The potentiometer: here basic ADC was used. A potentiometer works by splitting the input voltage into two. The potential difference between the outer two pins remains the same, however, turning the knob will adjust the resistance and the output voltage in the inner pin (connected to a pin set to `ADC`). The potentiometer ussed in this project was linear, so we used a linear interpolation equation allowing adjustment on integer values from 20 degrees (standard room temperature) and the initial measurement, with single degree increments. See main.c comments.
 
-Use the built-in continuous integration in GitLab.
+4) The buzzer: this was a very simple peripheral, with no resistors needed, only a GPIO output, and a ground pin. When it was time to buzz, the GPIO output was set, and kept on for half a second with `HAL_Delay(500)` until the pin was reset. 
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing(SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+5) The push button: this peripheral was slightly complex, as the pins had to be bent straight to stick all the way in the breadboard for the button to work! The way this was set up was through a 5V to Ground connection with a 10k Ohm pull-up resistor in between, and an input pin branched out to the STM32 microcontroller. If the input pin detected a 0 state, which indicates that the button is pressed down, actions were taken accordingly, depending on the stage of the procedure.
 
-***
+*How is this all put together?*
 
-# Editing this README
+We use the power of enumerations! In the C programming language, enums are user-defined data types with names for a set of constants. 
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thank you to [makeareadme.com](https://www.makeareadme.com/) for this template.
+The way firmware and embedded systems programming works (for the STM32) is that you "flash" the code to the microcontroller, and it will continuously run the `while(1) {}` loop. For the special case of the STM32, when you open up the CubeIDE, you choose a board type, for which code is immediately set up by the IDE for that board. 
 
-## Suggestions for a good README
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+Then, there are "user code" commends, between which one should write code to preserve it through code regenerations. To set pins to a certain state and configure them, one simply opens the `.ioc` file eponymous with the user-defined project name, sets configurations, saves the `.ioc` file, and generates code.
 
-## Name
-Choose a self-explaining name for your project.
+**Therefore**, this project will have to run continuous, possibly infinite, rounds of the "measure-set temperature-check temperature-buzz" steps. In each step, the same while loop must be continuously traversed to monitor user input. So with different sets of sets of steps in the same loop, we simply make everything more readable by setting enum constants such as `reset`, `set-temp`, etc. Side joke: ChatGPT was not used for that.
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+## Further Notes
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+The design files include the design document, the circuit diagrams, the 3D model of the stand, and a changelog. Another changelog is in the `dev` branch.
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+To view a demonstration of a successful implementation, see the folder called 'Demo Videos' (coming soon).
