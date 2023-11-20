@@ -88,7 +88,7 @@ int main(void)
 
   /* USER CODE BEGIN Init */
   uint16_t potentiometerValue;
-  uint16_t user_temp;
+  uint16_t user_temp = 20;
   uint16_t init_temp;
   enum stage curr = reset;
   /* USER CODE END Init */
@@ -148,11 +148,10 @@ int main(void)
 			  HAL_Delay(1);
 		  }
 	  } else if(curr==set_temp) {
-		  HAL_ADC_Start(&hadc1);
+		  HAL_ADC_Start(&hadc1); // take potentiometer input
 		  HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-		  potentiometerValue = HAL_ADC_GetValue(&hadc1);
-		  // uint16_t t = (4095 - potentiometerValue)/potentiometerValue;
-		  uint16_t targetTemp = ((potentiometerValue)*(init_temp - 20)/4095)+20;
+		  potentiometerValue = HAL_ADC_GetValue(&hadc1); // take potentiometer value
+		  uint16_t targetTemp = ((potentiometerValue)*(init_temp - 20)/4095)+20; // LINEAR INTERPOLATION FORMULA
 		  // Set display params
 		  HD44780_Clear();
 		  HD44780_SetCursor(0,0);
@@ -182,8 +181,9 @@ int main(void)
 		  HD44780_PrintStr(tempString);
 		  // TODO: compare with user temp, if close, then BUZZ -> DONE
 		  HAL_Delay(1000); // allows user one second before buzz check and activate
-		  if(abs(user_temp - temperature)<=10) {
+		  if(abs(user_temp - temperature)<5) {
 			  curr = buzz;
+			  continue;
 		  }
 		  HAL_Delay(9000); // between temp measurements, an overall delay of 10 seconds (subject to change)
 	  } else if(curr==buzz) {
@@ -199,6 +199,7 @@ int main(void)
 		  HAL_Delay(1);
 		  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1) == 0) {
 			  curr = reset;
+			  HAL_Delay(1000); // bug fix - delay
 		  }
 	  }
     /* USER CODE END WHILE */
