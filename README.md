@@ -34,16 +34,16 @@ This is accomplished with GPIO input/output control, ADC input, and the I2C comm
 
 ### How is this all put together?
 
-We use the power of enumerations! In the C programming language, enums are user-defined data types with names for a set of constants. 
+We use the power of enumerations! In the C programming language, enums are user-defined data types with user-defined readable names for the set of possible constants. 
 
-The way firmware and embedded systems programming works (for the STM32) is that you "flash" the code to the microcontroller, and it will continuously run the `while(1) {}` loop. For the special case of the STM32, when you open up the CubeIDE, you choose a board type, for which code is immediately set up by the IDE for that board. 
+With firmware and embedded systems programming, after you flash the code to the microcontroller, the microcontroller will continuously run the `while(1) {}` loop. For the special case of the STM32, when you open up the CubeIDE, you choose a board type, for which code is immediately set up by the IDE for that board and more code can be generated. 
 
-Then, there are "user code" commends, between which one should write code to preserve it through code regenerations. To set pins to a certain state and configure them, one simply opens the `.ioc` file eponymous with the user-defined project name, sets configurations, saves the `.ioc` file, and generates code.
+Then, there are "user code" comments, between which one should write code to preserve it through code regenerations. To set pins to a certain state and configure them, one simply opens the `.ioc` file eponymous with the user-defined project name, sets configurations, saves the `.ioc` file, and the CubeIDE will generate code for you to configure everything.
 
 **Therefore**, this project will have to run continuous, possibly infinite, rounds of the "measure-set temperature-check temperature-buzz" steps. In each step, the same while loop must be continuously traversed to monitor user input. So with different sets of sets of steps in the same loop, we simply make everything more readable by setting enum constants such as `reset`, `set-temp`, etc. Side joke: ChatGPT was not used for that.
 
 ## Further Notes
 
-The design files include the design document, the circuit diagrams, the 3D model of the stand, and a changelog. Another changelog is in the `dev` branch.
+The design files include the design document, the circuit diagrams, the 3D model of the stand. Note that the changelog markdown stores all version changes. 
 
 To view a demonstration of a successful implementation, see the folder called 'Demo Videos'. Apologies for the poor filming quality and display resolution.
