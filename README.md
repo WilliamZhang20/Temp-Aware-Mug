@@ -1,4 +1,4 @@
-# ECE198 Project - Mug Temperature Tracker
+# ECE 198 Project - Hot Drink Temperature Tracker
 
 This project is for the ECE 198 Project Studio course in 1A Computer Engineering at the University of Waterloo, created by Wilson Cheng and William Zhang.
 
@@ -20,19 +20,19 @@ The project will involve the control of 5 peripherals: an LCD display, an infrar
 
 This is accomplished with GPIO input/output control, ADC input, and the I2C communication protocol. 
 
-*How is each peripheral controlled?*
+### How is each peripheral controlled?
 
 1) The display: we used a library whose code is in the files called `liquidcrystal_i2c`. This allowed for easy calling of functions, after setting the I2C pins, checking the `hi2c1`, and generating code. 
 
 2) The thermometer: another library was used, whose code is in [this](https://github.com/dinamitemic/mlx90614) repo. However, certain functions were uncallable with our STM32, and external variables had to be modified to `hi2c1` rather than the original `hi2c3`. Finally, while the thermometer can detect ambient temperature if used with library functions on Arduino, there were no ambient temperature functions here. Only object temperature functions, which had to be modified, and in fact, extracted to `main.c` to make temperature detection work.
 
-3) The potentiometer: here basic ADC was used. A potentiometer works by splitting the input voltage into two. The potential difference between the outer two pins remains the same, however, turning the knob will adjust the resistance and the output voltage in the inner pin (connected to a pin set to `ADC`). The potentiometer ussed in this project was linear, so we used a linear interpolation equation allowing adjustment on integer values from 20 degrees (standard room temperature) and the initial measurement, with single degree increments. See main.c comments.
+3) The potentiometer: here basic ADC was used. A potentiometer works by splitting the input voltage into two. The potential difference between the outer two pins remains the same, however, turning the knob will adjust the resistance and the output voltage in the inner pin (connected to a pin set to `ADC`). The potentiometer used in this project was linear, so we used a linear interpolation equation allowing adjustment on integer values from 20 degrees (standard room temperature) and the initial measurement, with single degree increments. See main.c comments.
 
 4) The buzzer: this was a very simple peripheral, with no resistors needed, only a GPIO output, and a ground pin. When it was time to buzz, the GPIO output was set, and kept on for half a second with `HAL_Delay(500)` until the pin was reset. 
 
 5) The push button: this peripheral was slightly complex, as the pins had to be bent straight to stick all the way in the breadboard for the button to work! The way this was set up was through a 5V to Ground connection with a 10k Ohm pull-up resistor in between, and an input pin branched out to the STM32 microcontroller. If the input pin detected a 0 state, which indicates that the button is pressed down, actions were taken accordingly, depending on the stage of the procedure.
 
-*How is this all put together?*
+### How is this all put together?
 
 We use the power of enumerations! In the C programming language, enums are user-defined data types with names for a set of constants. 
 
@@ -46,4 +46,4 @@ Then, there are "user code" commends, between which one should write code to pre
 
 The design files include the design document, the circuit diagrams, the 3D model of the stand, and a changelog. Another changelog is in the `dev` branch.
 
-To view a demonstration of a successful implementation, see the folder called 'Demo Videos' (coming soon).
+To view a demonstration of a successful implementation, see the folder called 'Demo Videos'. Apologies for the poor filming quality and display resolution.
