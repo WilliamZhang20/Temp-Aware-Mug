@@ -184,6 +184,9 @@ int main(void)
 		  if(abs(user_temp - temperature)<5) {
 			  curr = buzz;
 			  continue;
+		  } else if(temperature < user_temp) {
+			  curr = buzz; // new redundancy feature - if both user_temp and temperature are high but if cup pulled away...
+			  continue;
 		  }
 		  HAL_Delay(9000); // between temp measurements, an overall delay of 10 seconds (subject to change)
 	  } else if(curr==buzz) {
