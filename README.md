@@ -12,7 +12,7 @@ To utilize this, follow the documents in the "Design Files" directory to assembl
 
 Then, to flash the code, plug the STM32 into an electronic source, clone this repository, open an STM CubeIDE, and press the build hammer and the run button.
 
-The display should prompt you to press the button, upon whicih the thermometer will take an initial measurement. Then, you should be prompted to turn the potentiometer knob to set a temperature. Push the button again to set your desired temperature, and wait for the buzz. You will see regular temperature updates. 
+The display should prompt you to press the button, after which the thermometer will take an initial measurement. Then, you should be prompted to turn the potentiometer knob to set a temperature. Push the button again to set your desired temperature, and wait for the buzz. You will see regular temperature updates. 
 
 ## How does this work?
 
@@ -40,9 +40,11 @@ With firmware and embedded systems programming, after you flash the code to the 
 
 Then, there are "user code" comments, between which one should write code to preserve it through code regenerations. To set pins to a certain state and configure them, one simply opens the `.ioc` file eponymous with the user-defined project name, sets configurations, saves the `.ioc` file, and the CubeIDE will generate code for you to configure everything.
 
-**Therefore**, this project will have to run continuous, possibly infinite, rounds of the "measure-set temperature-check temperature-buzz" steps. In each step, the same while loop must be continuously traversed to monitor user input. So with different sets of sets of steps in the same loop, we simply make everything more readable by setting enum constants such as `reset`, `set-temp`, etc. Side joke: ChatGPT was not used for that.
+**Therefore**, this project will have to run continuous, possibly infinite, rounds of the "measure-set temperature-check temperature-buzz" steps. In each step, the same while loop must be continuously traversed to monitor user input. So with different sets of sets of steps in the same loop, we simply associate enum constants such as `reset`, `set-temp`, etc with user-defined enums constants and certain commands via control flow. Side joke: ChatGPT was not used for that.
 
 ## Further Notes
+
+An extra feature that was added to stop infinite runs is to check if the measured temperature is lower than the desired temperature. This occurs outside of existing conditions when both the desired temperature and cup temperature are much higher than room temperature, and the cup is removed before the buzzer sounds. 
 
 The design files include the design document, the circuit diagrams, the 3D model of the stand. Note that the changelog markdown stores all version changes. 
 
