@@ -1,2 +1,2 @@
-Drivers/* linguist-vendored
-Debug/* linguist-vendored
+Drivers/** linguist-vendored
+Debug/** linguist-vendored
